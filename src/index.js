@@ -7,10 +7,25 @@ const customers = [];
 
 app.use(express.json());
 
+//Middleware
+function verifyIfExistsAccountCPF(request, response, next) {
+  const { cpf } = request.headers;
+
+  const customer = customers.find((customer) => customer.cpf === cpf);
+
+  if (!customer) {
+    return response.status(400).json({ error: "Customer not found" });
+  }
+
+  request.customer = customer;
+
+  return next();
+}
+
 /**
  * cpf- string
  * name - string
- * id - uuid - universe unique unife
+ * id - uuid -  universally unique identifier
  * statement - []
  */
 app.post("/account", (request, response) => {
@@ -35,16 +50,13 @@ app.post("/account", (request, response) => {
   return response.status(201).send();
 });
 
-app.get("/statement/", (request, response) => {
-  const { cpf } = request.headers;
+//app.use(verifyIfExistsAccountCPF);
 
-  const customer = customers.find((customer) => customer.cpf === cpf);
-
-  if (!customer) {
-    return response.status(400).json({ error: "Customer not found" });
-  }
-
+app.get("/statement", verifyIfExistsAccountCPF, (request, response) => {
+    const { customer } = request;
   return response.json(customer.statement);
 });
+
+
 
 app.listen(3333);
