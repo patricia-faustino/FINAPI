@@ -24,14 +24,14 @@ function verifyIfExistsAccountCPF(request, response, next) {
 }
 
 function getBalance(statement) {
-    const balance = statement.reduce((acumulator, operation) =>{
-        if(operation.type === 'credit') {
-            return acumulator + operation.amount;
-        }else {
-            return acc -operation.amount;
-        }
-    }, 0);
-    return balance;
+  const balance = statement.reduce((acumulator, operation) => {
+    if (operation.type === "credit") {
+      return acumulator + operation.amount;
+    } else {
+      return acc - operation.amount;
+    }
+  }, 0);
+  return balance;
 }
 
 /**
@@ -87,24 +87,40 @@ app.post("/deposit", verifyIfExistsAccountCPF, (request, response) => {
 });
 
 app.post("/withdraw", verifyIfExistsAccountCPF, (request, response) => {
-    const { amount } = request.body;
-    const { customer } = request;
+  const { amount } = request.body;
+  const { customer } = request;
 
-    const balance = getBalance(customer.statement);
+  const balance = getBalance(customer.statement);
 
-    if(balance < amount){
-        return response.status(400).json({ error: "Insufficient funds!" });
-    }
+  if (balance < amount) {
+    return response.status(400).json({ error: "Insufficient funds!" });
+  }
 
-    const statementOperation = {
-        amount,
-        created_at: new Date(),
-        type: "debit",
-      };
-    
-      customer.statement.push(statementOperation);
-    
-      return response.status(201).send();
-})
+  const statementOperation = {
+    amount,
+    created_at: new Date(),
+    type: "debit",
+  };
+
+  customer.statement.push(statementOperation);
+
+  return response.status(201).send();
+});
+
+app.get("/statement/date", verifyIfExistsAccountCPF, (request, response) => {
+  const { customer } = request;
+
+  const { date } = request.query;
+
+  const dateFormat = new Date(date + " 00:00");
+
+  const statement = customer.statement.filter(
+    (statement) =>
+      statement.created_at.toDateString() ===
+      new Date(dateFormat).toDateString()
+  );
+
+  return response.json(statement);
+});
 
 app.listen(3333);
